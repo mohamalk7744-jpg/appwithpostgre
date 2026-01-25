@@ -89,7 +89,7 @@ async function startServer() {
     });
   });
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
+  const preferredPort = parseInt(process.env.PORT || "3001");
   const port = await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {
@@ -99,7 +99,6 @@ async function startServer() {
   server.listen(port, "0.0.0.0", () => {
     console.log(`[api] server listening on port ${port}`);
     console.log(`[api] local access: http://localhost:${port}`);
-    console.log(`[api] network access: http://10.0.184.5:${port}`);
   });
 }
 
