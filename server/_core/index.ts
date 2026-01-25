@@ -29,7 +29,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
-  const app = express.default ? express.default() : (express as any)();
+  // Use any cast to safely check for .default property on express module import
+  // This handles various ways express might be exported/imported in the current environment
+  const app = (express as any).default ? (express as any).default() : (express as any)();
   const server = createServer(app);
 
   // Enable CORS - use 'any' to bypass type resolution issues
