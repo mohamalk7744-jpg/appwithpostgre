@@ -1,3 +1,4 @@
+
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert, TextInput, View, Modal, FlatList } from "react-native";
@@ -350,6 +351,7 @@ export default function QuizzesScreen() {
               quizzes?.map((quiz) => (
                 <ThemedView key={quiz.id} style={styles.quizCard}>
                   <View style={styles.quizCardHeader}>
+                    {/* Fixed missing actions and actionBtn styles */}
                     <View style={styles.actions}>
                       <Pressable onPress={() => handleDelete(quiz.id)} style={styles.actionBtn}>
                         <Ionicons name="trash-outline" size={20} color="#EF4444" />
@@ -631,6 +633,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  // Added missing actions and actionBtn styles
+  actions: { flexDirection: 'row', gap: 12 },
+  actionBtn: { padding: 4 },
   typeBadge: {
     paddingVertical: 2,
     paddingHorizontal: 8,
