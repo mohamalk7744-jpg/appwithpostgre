@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -50,7 +51,6 @@ export const appRouter = router({
     upload: protectedProcedure
       .input(z.object({ base64: z.string(), fileName: z.string(), contentType: z.string().optional() }))
       .mutation(async ({ input }) => {
-        // Return the Base64 as a data URI directly
         const mimeType = input.contentType || 'image/jpeg';
         return { url: `data:${mimeType};base64,${input.base64}` };
       }),
@@ -173,18 +173,45 @@ export const appRouter = router({
 
   chat: router({
     ask: protectedProcedure.input(z.object({ subjectId: z.number(), question: z.string().min(1) })).mutation(async ({ ctx, input }) => {
+      // التأكد من صلاحية الوصول
       const access = await db.getStudentSubjectAccess(ctx.user.id, input.subjectId);
-      if (!access || access.hasAccess === 0) return { answer: "عذراً، لا تملك صلاحية الوصول لهذا المنهج. يرجى الاشتراك في المادة أولاً لتتمكن من سؤال البوت عنها.", success: false };
+      if (!access || access.hasAccess === 0) {
+         return { answer: "عذراً، لا تملك صلاحية الوصول لهذا المنهج. يرجى الاشتراك في المادة أولاً لتتمكن من سؤال البوت عنها.", success: false };
+      }
+
       const subject = await db.getSubjectById(input.subjectId);
-      if (!subject || (!subject.curriculum && !subject.curriculumUrl)) return { answer: "عذراً، لم يتم رفع المنهاج لهذه المادة بعد. سأكون جاهزاً للرد قريباً!", success: false };
+      if (!subject) return { answer: "المادة غير موجودة.", success: false };
+
+      // جلب المنهج النصي
+      let curriculumText = subject.curriculum || "";
+      
+      // إذا كان المنهج نصياً فارغاً ولكن هناك دروس، نجمع الدروس كمنهج إضافي
+      if (!curriculumText) {
+        const lessons = await db.getLessonsBySubject(input.subjectId);
+        if (lessons.length > 0) {
+          curriculumText = lessons.map(l => `درس: ${l.title}\nالمحتوى: ${l.content}`).join("\n---\n");
+        }
+      }
+
+      if (!curriculumText) {
+        return { answer: "عذراً، لم يتم رفع تفاصيل المنهج لهذه المادة بعد. سأكون جاهزاً للرد فور توفرها!", success: false };
+      }
+
       try {
-        let curriculum = subject.curriculum || "";
-        const answer = await askGemini(input.question, curriculum);
-        await db.createChatMessage({ studentId: ctx.user.id, subjectId: input.subjectId, question: input.question, answer: answer });
+        const answer = await askGemini(input.question, curriculumText);
+        
+        // حفظ سجل المحادثة
+        await db.createChatMessage({ 
+          studentId: ctx.user.id, 
+          subjectId: input.subjectId, 
+          question: input.question, 
+          answer: answer 
+        });
+
         return { answer, success: true };
       } catch (error) {
-        console.error("Chat error:", error);
-        return { answer: "عذراً، حدث خطأ أثناء محاولة الحصول على إجابة من البوت الذكي. يرجى المحاولة لاحقاً.", success: false };
+        console.error("Chat error in router:", error);
+        return { answer: "عذراً، حدث خطأ تقني أثناء محاولة الرد. يرجى المحاولة لاحقاً.", success: false };
       }
     }),
   }),
