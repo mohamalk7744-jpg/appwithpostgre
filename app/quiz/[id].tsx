@@ -84,6 +84,7 @@ export default function QuizScreen() {
   };
 
   const handleSubmit = async () => {
+    if (!currentQuestion) return;
     const currentAns = answers[currentQuestion.id];
     if (currentQuestion.questionType === 'multiple_choice' && !currentAns?.selectedOptionId) {
       Alert.alert("تنبيه", "يرجى اختيار إجابة.");
@@ -146,7 +147,7 @@ export default function QuizScreen() {
           status: 'submitted'
         });
       } else {
-        setScoreResult(result);
+        setScoreResult(result || { status: 'submitted' });
       }
       
       setShowResult(true);

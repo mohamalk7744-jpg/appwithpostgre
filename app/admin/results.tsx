@@ -1,6 +1,6 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { StyleSheet, View, ActivityIndicator, FlatList, TouchableOpacity, ScrollView, Animated, TextInput, Image, Alert, Modal } from "react-native";
+import { StyleSheet, View, ActivityIndicator, FlatList, TouchableOpacity, ScrollView, Animated, TextInput, Image, Alert, Modal, Platform } from "react-native";
 import { trpc } from "@/lib/trpc";
 import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -64,9 +64,9 @@ export default function ResultsScreen() {
   ];
 
   const navigateTo = (nextStep: Step) => {
-    Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
+    Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: Platform.OS !== 'web' }).start(() => {
       setStep(nextStep);
-      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: Platform.OS !== 'web' }).start();
     });
   };
 

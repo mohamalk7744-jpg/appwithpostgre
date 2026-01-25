@@ -8,28 +8,19 @@ import "dotenv/config";
 export async function askGemini(question: string, curriculum: string = ""): Promise<string> {
   try {
     // Correct: Initialize GoogleGenAI using the process.env.API_KEY directly as per guidelines.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const genAI = new GoogleGenAI(process.env.API_KEY || "");
     
-    // استخدام موديل Gemini 3 Flash لسرعة الاستجابة وكفاءتها التعليمية
-    const modelName = 'gemini-3-flash-preview';
-    
-    const systemInstruction = curriculum
-      ? `أنت مساعد تعليمي خبير. المنهج الدراسي الحالي هو: ${curriculum}. أجب على أسئلة الطلاب بوضوح وبطريقة تعليمية مبسطة ومباشرة باللغة العربية.`
-      : "أنت مساعد تعليمي خبير. أجب على أسئلة الطلاب بوضوح وبطريقة تعليمية مبسطة باللغة العربية.";
-
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: question,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.7,
-        topP: 0.95,
-        topK: 64,
-      },
+    // استخدام موديل Gemini 1.5 Flash لسرعة الاستجابة وكفاءتها التعليمية
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      systemInstruction: curriculum
+        ? `أنت مساعد تعليمي خبير. المنهج الدراسي الحالي هو: ${curriculum}. أجب على أسئلة الطلاب بوضوح وبطريقة تعليمية مبسطة ومباشرة باللغة العربية.`
+        : "أنت مساعد تعليمي خبير. أجب على أسئلة الطلاب بوضوح وبطريقة تعليمية مبسطة باللغة العربية.",
     });
 
-    // Correct: Access generated text via the .text property (do not call it as a method).
-    const resultText = response.text;
+    const result = await model.generateContent(question);
+    const response = await result.response;
+    const resultText = response.text();
     
     return resultText || "عذراً، لم أستطع توليد إجابة في الوقت الحالي.";
   } catch (error: any) {
