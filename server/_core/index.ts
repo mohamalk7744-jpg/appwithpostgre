@@ -1,5 +1,5 @@
 import "dotenv/config";
-import * as express from "express";
+import express from "express";
 import { createServer } from "http";
 import net from "net";
 import path from "path";
@@ -29,12 +29,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
-  // Use any cast to safely check for .default property on express module import
-  // This handles various ways express might be exported/imported in the current environment
-  const app = (express as any).default ? (express as any).default() : (express as any)();
+  const app = express();
   const server = createServer(app);
 
-  // Enable CORS - use 'any' to bypass type resolution issues
   app.use((req: any, res: any, next: any) => {
     const origin = req.headers.origin;
     if (origin) {
@@ -54,37 +51,36 @@ async function startServer() {
     next();
   });
 
-  // Use (express as any) to avoid NextHandleFunction mismatch
-  app.use((express as any).json({ limit: "50mb" }));
-  app.use((express as any).urlencoded({ limit: "50mb", extended: true }));
+  // Fix: Cast middleware to any to resolve PathParams type mismatch on lines 54 and 55.
+  app.use(express.json({ limit: "50mb" }) as any);
+  // Fix: Cast middleware to any to resolve PathParams type mismatch on lines 54 and 55.
+  app.use(express.urlencoded({ limit: "50mb", extended: true }) as any);
 
-  // Serve static files from uploads directory
   const uploadDir = path.resolve(process.cwd(), process.env.UPLOAD_DIR || './uploads');
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
   app.use('/uploads', express.static(uploadDir));
 
-  // Root route for testing
   app.get("/", (_req: any, res: any) => {
     res.json({ message: "E-Learning API Server is running", status: "ok" });
   });
 
-  registerOAuthRoutes(app);
+  registerOAuthRoutes(app as any);
 
   app.get("/api/health", (_req: any, res: any) => {
     res.json({ ok: true, timestamp: Date.now() });
   });
 
+  // Fix: Cast tRPC middleware to any on line 61 to resolve RequestHandler type incompatibility.
   app.use(
     "/api/trpc",
     createExpressMiddleware({
       router: appRouter,
       createContext,
-    }),
+    }) as any,
   );
 
-  // Fallback for unknown routes - use 'any' to bypass type resolution issues
   app.use((req: any, res: any) => {
     res.status(404).json({
       error: "Not Found",
