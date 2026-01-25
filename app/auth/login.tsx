@@ -83,7 +83,7 @@ export default function LoginScreen() {
         </ThemedText>
         
         <ThemedText style={styles.subtitle}>
-          مرحباً بك في تطبيق التعلم عن بعد
+          مرحباً بك في تطبيق خطِّطها
         </ThemedText>
 
         <View style={styles.form}>

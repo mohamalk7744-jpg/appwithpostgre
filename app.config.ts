@@ -12,7 +12,7 @@ const schemeFromBundleId = `manus${timestamp}`;
 
 const env = {
   // App branding
-  appName: 'تطبيق التعلم عن بعد',
+  appName: 'خطِّطها',
   appSlug: 'e_learning_mobile_app',
   logoUrl: '',
   scheme: schemeFromBundleId,
