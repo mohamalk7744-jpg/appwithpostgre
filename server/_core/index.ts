@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express from "express";
+import * as express from "express";
 import { createServer } from "http";
 import net from "net";
 import path from "path";
@@ -29,11 +29,11 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
-  const app = express();
+  const app = express.default ? express.default() : (express as any)();
   const server = createServer(app);
 
-  // Enable CORS
-  app.use((req, res, next) => {
+  // Enable CORS - use 'any' to bypass type resolution issues
+  app.use((req: any, res: any, next: any) => {
     const origin = req.headers.origin;
     if (origin) {
       res.header("Access-Control-Allow-Origin", origin);
@@ -52,8 +52,9 @@ async function startServer() {
     next();
   });
 
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Use (express as any) to avoid NextHandleFunction mismatch
+  app.use((express as any).json({ limit: "50mb" }));
+  app.use((express as any).urlencoded({ limit: "50mb", extended: true }));
 
   // Serve static files from uploads directory
   const uploadDir = path.resolve(process.cwd(), process.env.UPLOAD_DIR || './uploads');
@@ -63,13 +64,13 @@ async function startServer() {
   app.use('/uploads', express.static(uploadDir));
 
   // Root route for testing
-  app.get("/", (_req, res) => {
+  app.get("/", (_req: any, res: any) => {
     res.json({ message: "E-Learning API Server is running", status: "ok" });
   });
 
   registerOAuthRoutes(app);
 
-  app.get("/api/health", (_req, res) => {
+  app.get("/api/health", (_req: any, res: any) => {
     res.json({ ok: true, timestamp: Date.now() });
   });
 
@@ -81,8 +82,8 @@ async function startServer() {
     }),
   );
 
-  // Fallback for unknown routes to return JSON instead of HTML
-  app.use((req, res) => {
+  // Fallback for unknown routes - use 'any' to bypass type resolution issues
+  app.use((req: any, res: any) => {
     res.status(404).json({
       error: "Not Found",
       message: `Cannot ${req.method} ${req.path}`,
