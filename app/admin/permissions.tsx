@@ -1,3 +1,4 @@
+
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert, View, Modal, FlatList, TextInput } from "react-native";
@@ -150,20 +151,25 @@ export default function PermissionsScreen() {
               textAlign="right"
             />
 
-            <FlatList
-              data={filteredStudents}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => (
-                <Pressable style={styles.pickerItem} onPress={() => {
-                  setSelectedStudent(item);
-                  setShowStudentPicker(false);
-                  setStudentSearchQuery("");
-                }}>
-                  <ThemedText>{item.name} ({item.email})</ThemedText>
-                </Pressable>
-              )}
-              ListEmptyComponent={<ThemedText style={styles.emptyText}>لا يوجد طلاب مطابقين للبحث</ThemedText>}
-            />
+            {/* Use conditional rendering for empty state because FlatList ListEmptyComponent type is missing */}
+            {filteredStudents && filteredStudents.length > 0 ? (
+              <FlatList
+                data={filteredStudents}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                  <Pressable style={styles.pickerItem} onPress={() => {
+                    setSelectedStudent(item);
+                    setShowStudentPicker(false);
+                    setStudentSearchQuery("");
+                  }}>
+                    <ThemedText>{item.name} ({item.email})</ThemedText>
+                  </Pressable>
+                )}
+              />
+            ) : (
+              <ThemedText style={styles.emptyText}>لا يوجد طلاب مطابقين للبحث</ThemedText>
+            )}
+            
             <Pressable onPress={() => {
               setShowStudentPicker(false);
               setStudentSearchQuery("");

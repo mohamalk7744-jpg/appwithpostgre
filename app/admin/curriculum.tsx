@@ -37,8 +37,9 @@ export default function CurriculumScreen() {
       setIsUploading(true);
 
       // تحويل الملف إلى base64
+      // Fix: Use 'base64' string literal as EncodingType might not be correctly exported in all environments
       const base64 = await FileSystem.readAsStringAsync(file.uri, {
-        encoding: FileSystem.EncodingType.Base64,
+        encoding: 'base64' as any,
       });
 
       const uploadResult = await uploadFile.mutateAsync({

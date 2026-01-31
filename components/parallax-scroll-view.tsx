@@ -33,6 +33,7 @@ export default function ParallaxScrollView({
   // Include top safe area inset in header height for proper layout
   const headerHeight = HEADER_HEIGHT + insets.top;
 
+  // Fix: Cast the return object to any to resolve transform type mismatch and DefaultStyle assignability errors
   const headerAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -47,7 +48,7 @@ export default function ParallaxScrollView({
           scale: interpolate(scrollOffset.value, [-headerHeight, 0, headerHeight], [2, 1, 1]),
         },
       ],
-    };
+    } as any;
   });
 
   return (

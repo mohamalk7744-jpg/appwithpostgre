@@ -7,15 +7,15 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import * as Auth from '@/lib/auth';
 import { trpc } from '@/lib/trpc';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const router = useRouter();
-  const [email, setEmail] = useState('student@test.com');
+  const [email, setEmail] = useState('student@example.com');
   const [password, setPassword] = useState('password123');
   const [loading, setLoading] = useState(false);
   
-  // استخدام tRPC للاتصال بـ API
   const loginMutation = trpc.auth.login.useMutation();
 
   const handleLogin = async () => {
@@ -26,7 +26,6 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      // استدعاء API من السيرفر
       const result = await loginMutation.mutateAsync({
         email: email.trim(),
         password: password.trim(),
@@ -35,7 +34,6 @@ export default function LoginScreen() {
       if (result.success && result.user) {
         const user = result.user;
         
-        // حفظ بيانات المستخدم
         const userInfo: Auth.User = {
           id: user.id,
           openId: user.openId,
@@ -48,21 +46,16 @@ export default function LoginScreen() {
         
         await Auth.setUserInfo(userInfo);
         
-        // حفظ التوكن الحقيقي المرسل من السيرفر
         if (result.token) {
           await Auth.setSessionToken(result.token);
         } else {
-          // Fallback if no token (should not happen with new API)
           await Auth.setSessionToken('session_' + Date.now());
         }
 
-        // التوجيه حسب دور المستخدم
         setTimeout(() => {
           if (user.role === 'admin') {
-            // المعلم/المسؤول → صفحة الإعداد
-            router.replace('/admin' as any);
+            router.replace('/admin');
           } else {
-            // الطالب → التطبيق العادي
             router.replace('/(tabs)');
           }
         }, 500);
@@ -75,16 +68,23 @@ export default function LoginScreen() {
     }
   };
 
+  const tintColor = Colors[colorScheme ?? 'light'].tint;
+
   return (
     <ThemedView style={styles.container}>
       <View style={styles.content}>
-        <ThemedText type="title" style={styles.title}>
-          تسجيل الدخول
-        </ThemedText>
-        
-        <ThemedText style={styles.subtitle}>
-          مرحباً بك في تطبيق خطِّطها
-        </ThemedText>
+        {/* New Logo Placeholder Inspired by Provided Image */}
+        <View style={styles.logoContainer}>
+          <View style={[styles.iconCircle, { backgroundColor: tintColor }]}>
+            <Ionicons name="school" size={60} color="#fff" />
+          </View>
+          <ThemedText type="title" style={[styles.logoText, { color: tintColor }]}>
+            خطِّطها
+          </ThemedText>
+          <ThemedText style={styles.tagline}>
+            طريقك نحو التفوق والنجاح
+          </ThemedText>
+        </View>
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
@@ -93,16 +93,18 @@ export default function LoginScreen() {
               style={[
                 styles.input,
                 { 
-                  borderColor: Colors[colorScheme ?? 'light'].tint,
+                  borderColor: tintColor + '40',
                   color: Colors[colorScheme ?? 'light'].text,
+                  backgroundColor: tintColor + '05',
                 }
               ]}
               placeholder="أدخل بريدك الإلكتروني"
-              placeholderTextColor={Colors[colorScheme ?? 'light'].icon}
+              placeholderTextColor="#999"
               value={email}
               onChangeText={setEmail}
               editable={!loading}
               keyboardType="email-address"
+              textAlign="right"
             />
           </View>
 
@@ -112,23 +114,25 @@ export default function LoginScreen() {
               style={[
                 styles.input,
                 { 
-                  borderColor: Colors[colorScheme ?? 'light'].tint,
+                  borderColor: tintColor + '40',
                   color: Colors[colorScheme ?? 'light'].text,
+                  backgroundColor: tintColor + '05',
                 }
               ]}
               placeholder="أدخل كلمة المرور"
-              placeholderTextColor={Colors[colorScheme ?? 'light'].icon}
+              placeholderTextColor="#999"
               value={password}
               onChangeText={setPassword}
               editable={!loading}
               secureTextEntry
+              textAlign="right"
             />
           </View>
 
           <Pressable
             style={[
               styles.loginButton,
-              { backgroundColor: Colors[colorScheme ?? 'light'].tint },
+              { backgroundColor: tintColor },
               loading && styles.loginButtonDisabled,
             ]}
             onPress={handleLogin}
@@ -138,32 +142,15 @@ export default function LoginScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <ThemedText style={styles.loginButtonText}>
-                تسجيل الدخول
+                دخول للمنصة
               </ThemedText>
             )}
           </Pressable>
         </View>
 
-        <View style={styles.demoInfo}>
-          <ThemedText style={styles.demoTitle}>بيانات تجريبية:</ThemedText>
-          <ThemedText style={styles.demoText}>
-            👨‍🎓 طالب:
-          </ThemedText>
-          <ThemedText style={styles.demoText}>
-            البريد: student@test.com
-          </ThemedText>
-          <ThemedText style={styles.demoText}>
-            كلمة المرور: password123
-          </ThemedText>
-          
-          <ThemedText style={[styles.demoText, { marginTop: 12 }]}>
-            👨‍🏫 مسؤول:
-          </ThemedText>
-          <ThemedText style={styles.demoText}>
-            البريد: admin@test.com
-          </ThemedText>
-          <ThemedText style={styles.demoText}>
-            كلمة المرور: password123
+        <View style={styles.footer}>
+          <ThemedText style={styles.footerText}>
+            بواسطة شركة خطِّطها للحلول البرمجية
           </ThemedText>
         </View>
       </View>
@@ -172,70 +159,19 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  content: {
-    gap: 24,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    textAlign: 'center',
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  form: {
-    gap: 16,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    minHeight: 44,
-  },
-  loginButton: {
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 44,
-    marginTop: 8,
-  },
-  loginButtonDisabled: {
-    opacity: 0.6,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  demoInfo: {
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    gap: 4,
-  },
-  demoTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    opacity: 0.7,
-  },
-  demoText: {
-    fontSize: 12,
-    opacity: 0.6,
-  },
+  container: { flex: 1, justifyContent: 'center', paddingHorizontal: 30 },
+  content: { gap: 40 },
+  logoContainer: { alignItems: 'center', gap: 10 },
+  iconCircle: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center', elevation: 10, shadowColor: '#7c3aed', shadowOpacity: 0.3, shadowRadius: 20 },
+  logoText: { fontSize: 36, fontWeight: '900', marginTop: 10 },
+  tagline: { fontSize: 14, color: '#6B7280', opacity: 0.8 },
+  form: { gap: 20 },
+  inputGroup: { gap: 8 },
+  label: { fontSize: 14, fontWeight: '700', textAlign: 'right', marginRight: 5 },
+  input: { borderWidth: 2, borderRadius: 16, paddingHorizontal: 20, paddingVertical: 15, fontSize: 16 },
+  loginButton: { borderRadius: 16, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', elevation: 5, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
+  loginButtonDisabled: { opacity: 0.6 },
+  loginButtonText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  footer: { marginTop: 20, alignItems: 'center' },
+  footerText: { fontSize: 11, color: '#999', opacity: 0.6 }
 });
