@@ -1,3 +1,4 @@
+
 import { getDb } from '../server/db.ts';
 import { users } from '../drizzle/schema.ts';
 
@@ -8,7 +9,8 @@ async function addUsers() {
     
     if (!db) {
       console.error('❌ Failed to connect to database');
-      process.exit(1);
+      // Fix: Cast process to any to access exit in this environment
+      (process as any).exit(1);
     }
 
     console.log('✅ Connected to database');
@@ -48,10 +50,12 @@ async function addUsers() {
     console.log('👨‍🏫 Teacher 2: teacher2@example.com / password123');
     console.log('👨‍🎓 Student: student@example.com / password123');
 
-    process.exit(0);
+    // Fix: Cast process to any to access exit
+    (process as any).exit(0);
   } catch (error) {
     console.error('❌ Error:', error);
-    process.exit(1);
+    // Fix: Cast process to any to access exit
+    (process as any).exit(1);
   }
 }
 

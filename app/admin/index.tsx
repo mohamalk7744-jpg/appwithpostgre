@@ -30,11 +30,12 @@ export default function AdminDashboard() {
   const adminOptions = [
     { title: "إدارة المواد الدراسية", href: "/admin/subjects", icon: "book-outline", color: "#3B82F6" },
     { title: "إدارة الدروس", href: "/admin/lessons", icon: "reader-outline", color: "#10B981" },
-    { title: "إدارة الاختبارات", href: "/admin/quizzes", icon: "help-circle-outline", color: "#F59E0B" },
-    { title: "إدارة المناهج (البوت)", href: "/admin/curriculum", icon: "chatbubbles-outline", color: "#6366F1" },
-    { title: "نتائج واختبارات الطلاب", href: "/admin/results", icon: "stats-chart-outline", color: "#8B5CF6" },
+    { title: "الاختبارات اليومية (خيارات)", href: "/admin/daily-quizzes", icon: "flash-outline", color: "#F59E0B" },
+    { title: "إدارة الاختبارات الرسمية", href: "/admin/quizzes", icon: "help-circle-outline", color: "#6366F1" },
+    { title: "إدارة المناهج (البوت)", href: "/admin/curriculum", icon: "chatbubbles-outline", color: "#8B5CF6" },
+    { title: "نتائج الاختبارات الرسمية", href: "/admin/results", icon: "stats-chart-outline", color: "#EC4899" },
     { title: "إدارة صلاحيات الطلاب", href: "/admin/permissions", icon: "people-outline", color: "#EF4444" },
-    { title: "إدارة الخصومات", href: "/admin/discounts", icon: "pricetag-outline", color: "#EC4899" },
+    { title: "إدارة الخصومات", href: "/admin/discounts", icon: "pricetag-outline", color: "#10B981" },
     { title: "إدارة المستخدمين", href: "/admin/users", icon: "person-add-outline", color: "#10B981" },
   ];
 

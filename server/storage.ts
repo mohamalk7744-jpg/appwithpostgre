@@ -1,3 +1,4 @@
+
 // Preconfigured storage helpers for Manus WebDev templates
 // Supports Railway Storage and other storage backends
 
@@ -67,7 +68,8 @@ function buildAuthHeaders(apiKey: string): HeadersInit {
 
 // تخزين محلي كاحتياطي
 async function saveLocally(relKey: string, data: Buffer): Promise<{ key: string; url: string }> {
-  const uploadDir = path.resolve(process.cwd(), ENV.uploadDir || './uploads');
+  // Fix: Cast process to any to access cwd()
+  const uploadDir = path.resolve((process as any).cwd(), ENV.uploadDir || './uploads');
   
   // إنشاء المجلد إذا لم يكن موجوداً
   if (!fs.existsSync(uploadDir)) {

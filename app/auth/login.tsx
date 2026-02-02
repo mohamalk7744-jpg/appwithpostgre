@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { View, StyleSheet, TextInput, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, TextInput, Pressable, ActivityIndicator, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -7,15 +8,15 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import * as Auth from '@/lib/auth';
 import { trpc } from '@/lib/trpc';
+import { KhatthaLogo } from '@/components/khattha-logo';
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const router = useRouter();
-  const [email, setEmail] = useState('student@test.com');
+  const [email, setEmail] = useState('student@example.com');
   const [password, setPassword] = useState('password123');
   const [loading, setLoading] = useState(false);
   
-  // استخدام tRPC للاتصال بـ API
   const loginMutation = trpc.auth.login.useMutation();
 
   const handleLogin = async () => {
@@ -26,7 +27,6 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      // استدعاء API من السيرفر
       const result = await loginMutation.mutateAsync({
         email: email.trim(),
         password: password.trim(),
@@ -35,7 +35,6 @@ export default function LoginScreen() {
       if (result.success && result.user) {
         const user = result.user;
         
-        // حفظ بيانات المستخدم
         const userInfo: Auth.User = {
           id: user.id,
           openId: user.openId,
@@ -47,195 +46,90 @@ export default function LoginScreen() {
         };
         
         await Auth.setUserInfo(userInfo);
-        
-        // حفظ التوكن الحقيقي المرسل من السيرفر
-        if (result.token) {
-          await Auth.setSessionToken(result.token);
-        } else {
-          // Fallback if no token (should not happen with new API)
-          await Auth.setSessionToken('session_' + Date.now());
-        }
+        await Auth.setSessionToken(result.token || 'session_' + Date.now());
 
-        // التوجيه حسب دور المستخدم
-        setTimeout(() => {
-          if (user.role === 'admin') {
-            // المعلم/المسؤول → صفحة الإعداد
-            router.replace('/admin' as any);
-          } else {
-            // الطالب → التطبيق العادي
-            router.replace('/(tabs)');
-          }
-        }, 500);
+        if (user.role === 'admin') {
+          router.replace('/admin');
+        } else {
+          router.replace('/(tabs)');
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'فشل تسجيل الدخول';
       Alert.alert('خطأ', message);
-      console.error('Login error:', error);
       setLoading(false);
     }
   };
 
+  const tintColor = Colors[colorScheme ?? 'light'].tint;
+
   return (
     <ThemedView style={styles.container}>
+      {/* Background Decor */}
+      <View style={styles.bgCircle} />
+      <View style={[styles.bgCircle, styles.bgCircleSmall]} />
+      
       <View style={styles.content}>
-        <ThemedText type="title" style={styles.title}>
-          تسجيل الدخول
-        </ThemedText>
-        
-        <ThemedText style={styles.subtitle}>
-          مرحباً بك في تطبيق خطِّطها
-        </ThemedText>
+        <View style={styles.logoSection}>
+          <KhatthaLogo size={220} color={tintColor} />
+          <ThemedText type="title" style={[styles.logoTitle, { color: tintColor }]}>
+            خطِّطها
+          </ThemedText>
+          <ThemedText style={styles.tagline}>
+            منصة "خطِّطها" للتعليم الذكي
+          </ThemedText>
+        </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <ThemedText style={styles.label}>البريد الإلكتروني</ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                { 
-                  borderColor: Colors[colorScheme ?? 'light'].tint,
-                  color: Colors[colorScheme ?? 'light'].text,
-                }
-              ]}
-              placeholder="أدخل بريدك الإلكتروني"
-              placeholderTextColor={Colors[colorScheme ?? 'light'].icon}
-              value={email}
-              onChangeText={setEmail}
-              editable={!loading}
-              keyboardType="email-address"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <ThemedText style={styles.label}>كلمة المرور</ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                { 
-                  borderColor: Colors[colorScheme ?? 'light'].tint,
-                  color: Colors[colorScheme ?? 'light'].text,
-                }
-              ]}
-              placeholder="أدخل كلمة المرور"
-              placeholderTextColor={Colors[colorScheme ?? 'light'].icon}
-              value={password}
-              onChangeText={setPassword}
-              editable={!loading}
-              secureTextEntry
-            />
-          </View>
+        <View style={styles.formCard}>
+          <TextInput
+            style={[styles.input, { borderColor: tintColor + '20', color: Colors[colorScheme ?? 'light'].text }]}
+            placeholder="البريد الإلكتروني"
+            placeholderTextColor="#999"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            textAlign="right"
+          />
+          <TextInput
+            style={[styles.input, { borderColor: tintColor + '20', color: Colors[colorScheme ?? 'light'].text }]}
+            placeholder="كلمة المرور"
+            placeholderTextColor="#999"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            textAlign="right"
+          />
 
           <Pressable
-            style={[
-              styles.loginButton,
-              { backgroundColor: Colors[colorScheme ?? 'light'].tint },
-              loading && styles.loginButtonDisabled,
-            ]}
+            style={[styles.loginBtn, { backgroundColor: tintColor }, loading && { opacity: 0.7 }]}
             onPress={handleLogin}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <ThemedText style={styles.loginButtonText}>
-                تسجيل الدخول
-              </ThemedText>
+              <ThemedText style={styles.loginBtnText}>دخول للمنصة</ThemedText>
             )}
           </Pressable>
         </View>
 
-        <View style={styles.demoInfo}>
-          <ThemedText style={styles.demoTitle}>بيانات تجريبية:</ThemedText>
-          <ThemedText style={styles.demoText}>
-            👨‍🎓 طالب:
-          </ThemedText>
-          <ThemedText style={styles.demoText}>
-            البريد: student@test.com
-          </ThemedText>
-          <ThemedText style={styles.demoText}>
-            كلمة المرور: password123
-          </ThemedText>
-          
-          <ThemedText style={[styles.demoText, { marginTop: 12 }]}>
-            👨‍🏫 مسؤول:
-          </ThemedText>
-          <ThemedText style={styles.demoText}>
-            البريد: admin@test.com
-          </ThemedText>
-          <ThemedText style={styles.demoText}>
-            كلمة المرور: password123
-          </ThemedText>
-        </View>
+        <ThemedText style={styles.footer}>© 2026 جميع الحقوق محفوظة لخطِّطها</ThemedText>
       </View>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  content: {
-    gap: 24,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    textAlign: 'center',
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  form: {
-    gap: 16,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    minHeight: 44,
-  },
-  loginButton: {
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 44,
-    marginTop: 8,
-  },
-  loginButtonDisabled: {
-    opacity: 0.6,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  demoInfo: {
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    gap: 4,
-  },
-  demoTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    opacity: 0.7,
-  },
-  demoText: {
-    fontSize: 12,
-    opacity: 0.6,
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
+  bgCircle: { position: 'absolute', top: -100, right: -100, width: 350, height: 350, borderRadius: 175, backgroundColor: '#7c3aed08' },
+  bgCircleSmall: { top: '60%', left: -150, width: 300, height: 300, backgroundColor: '#7c3aed05' },
+  content: { flex: 1, justifyContent: 'center', padding: 30 },
+  logoSection: { alignItems: 'center', marginBottom: 40 },
+  logoTitle: { fontSize: 44, fontWeight: '900', marginTop: -15 },
+  tagline: { fontSize: 15, color: '#6B7280', fontWeight: 'bold', marginTop: 5 },
+  formCard: { gap: 15, backgroundColor: '#fff', padding: 20, borderRadius: 25, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 15, elevation: 5 },
+  input: { borderWidth: 1.5, borderRadius: 15, padding: 18, fontSize: 16, backgroundColor: '#fdfdfd' },
+  loginBtn: { paddingVertical: 18, borderRadius: 15, alignItems: 'center', marginTop: 10 },
+  loginBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  footer: { position: 'absolute', bottom: 30, left: 0, right: 0, textAlign: 'center', fontSize: 12, color: '#aaa' }
 });

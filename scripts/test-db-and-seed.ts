@@ -1,3 +1,4 @@
+
 import "dotenv/config";
 import { getDb } from "../server/db";
 import * as authService from "../server/auth-service";
@@ -10,7 +11,8 @@ async function main() {
     const db = await getDb();
     if (!db) {
       console.error("Failed to initialize database connection.");
-      process.exit(1);
+      // Fix: Cast process to any to access exit
+      (process as any).exit(1);
     }
     console.log("Database connection successful!");
 
@@ -35,10 +37,12 @@ async function main() {
     console.log("Student user added: student@test.com / password123");
 
     console.log("All test users added successfully!");
-    process.exit(0);
+    // Fix: Cast process to any to access exit
+    (process as any).exit(0);
   } catch (error) {
     console.error("Error:", error);
-    process.exit(1);
+    // Fix: Cast process to any to access exit
+    (process as any).exit(1);
   }
 }
 

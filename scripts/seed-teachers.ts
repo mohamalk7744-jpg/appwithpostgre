@@ -1,3 +1,4 @@
+
 import { getDb } from "../server/db";
 import { users } from "../drizzle/schema";
 
@@ -5,7 +6,8 @@ async function seedTeachers() {
   const db = await getDb();
   if (!db) {
     console.error("Database not available");
-    process.exit(1);
+    // Fix: Cast process to any to access exit
+    (process as any).exit(1);
   }
 
   try {
@@ -51,7 +53,8 @@ async function seedTeachers() {
     console.log("👨‍🎓 Student: student@example.com / password123");
   } catch (error) {
     console.error("Error seeding teachers:", error);
-    process.exit(1);
+    // Fix: Cast process to any to access exit
+    (process as any).exit(1);
   }
 }
 

@@ -1,3 +1,4 @@
+
 import "dotenv/config";
 import { getDb } from "../server/db";
 import { users } from "../drizzle/schema";
@@ -9,7 +10,8 @@ async function main() {
     const db = await getDb();
     if (!db) {
       console.error("Failed to initialize database connection.");
-      process.exit(1);
+      // Fix: Cast process to any to access exit
+      (process as any).exit(1);
     }
 
     const allUsers = await db.select().from(users);
@@ -23,10 +25,12 @@ async function main() {
       openId: u.openId
     })));
 
-    process.exit(0);
+    // Fix: Cast process to any to access exit
+    (process as any).exit(0);
   } catch (error) {
     console.error("Error:", error);
-    process.exit(1);
+    // Fix: Cast process to any to access exit
+    (process as any).exit(1);
   }
 }
 

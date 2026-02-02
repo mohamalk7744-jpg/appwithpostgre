@@ -44,7 +44,8 @@ export default function OAuthCallback() {
               const userJson =
                 typeof atob !== "undefined"
                   ? atob(params.user)
-                  : Buffer.from(params.user, "base64").toString("utf-8");
+                  // Use globalThis instead of global to fix "Cannot find name 'global'" error
+                  : (globalThis as any).Buffer.from(params.user, "base64").toString("utf-8");
               const userData = JSON.parse(userJson);
               const userInfo: Auth.User = {
                 id: userData.id,

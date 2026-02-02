@@ -1,8 +1,10 @@
 import { ThemedView } from "@/components/themed-view";
-import { StyleSheet, ViewProps } from "react-native";
+import { StyleSheet, ViewProps, StyleProp, ViewStyle } from "react-native";
 
+// Explicitly add style to CardProps to ensure TypeScript recognizes it from ViewProps
 interface CardProps extends ViewProps {
   children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function Card({ children, style, ...props }: CardProps) {

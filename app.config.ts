@@ -1,12 +1,10 @@
+
 // Load environment variables with proper priority (system > .env)
 import "./scripts/load-env.js";
 import type { ExpoConfig } from "expo/config";
 
 // Bundle ID format: space.manus.<project_name_dots>.<timestamp>
-// e.g., "my-app" created at 2024-01-15 10:30:45 -> "space.manus.my.app.t20240115103045"
 const bundleId = "space.manus.e_learning_mobile_app.t20251219214100";
-// Extract timestamp from bundle ID and prefix with "manus" for deep link scheme
-// e.g., "space.manus.my.app.t20240115103045" -> "manus20240115103045"
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
 const schemeFromBundleId = `manus${timestamp}`;
 
@@ -23,7 +21,7 @@ const env = {
 const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
-  version: "1.0.1",
+  version: "1.0.2",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
@@ -34,10 +32,12 @@ const config: ExpoConfig = {
     bundleIdentifier: env.iosBundleId,
     infoPlist: {
       UIBackgroundModes: ["audio"],
+      NSCameraUsageDescription: "نحتاج للوصول للكاميرا لتصوير أوراق الحل.",
+      NSPhotoLibraryUsageDescription: "نحتاج للوصول لصورك لرفع ملفات الحل."
     },
   },
   android: {
-    versionCode: 2,
+    versionCode: 3,
     adaptiveIcon: {
       backgroundColor: "#E6F4FE",
       foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -47,7 +47,14 @@ const config: ExpoConfig = {
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
-    permissions: ["POST_NOTIFICATIONS"],
+    // التصاريح المطلوبة لمنع الـ Crash في الـ APK
+    permissions: [
+      "CAMERA",
+      "READ_EXTERNAL_STORAGE",
+      "WRITE_EXTERNAL_STORAGE",
+      "READ_MEDIA_IMAGES",
+      "POST_NOTIFICATIONS"
+    ],
     intentFilters: [
       {
         action: "VIEW",
@@ -80,12 +87,24 @@ const config: ExpoConfig = {
         },
       },
     ],
+    [
+      "expo-image-picker",
+      {
+        "photosPermission": "التطبيق يحتاج للوصول لصورك لرفع حلول الاختبارات.",
+        "cameraPermission": "التطبيق يحتاج للكاميرا لتصوير ورقة الحل مباشرة."
+      }
+    ],
+    [
+      "expo-document-picker",
+      {
+        "iCloudContainerEnvironment": "Production"
+      }
+    ]
   ],
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
   },
-  // <<< إضافة EAS Project ID هنا
   extra: {
     eas: {
       projectId: "0542859f-4287-49c2-b2d8-813c3c8d405e"

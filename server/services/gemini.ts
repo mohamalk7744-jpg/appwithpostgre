@@ -3,64 +3,75 @@ import { GoogleGenAI } from "@google/genai";
 import "dotenv/config";
 
 /**
- * دالة لإرسال سؤال لموديل Gemini والحصول على إجابة تعليمية
+ * دالة لإرسال سؤال لموديل Gemini والحصول على إجابة تعليمية رصينة مرتبطة بالمنهاج
  */
-export async function askGemini(question: string, curriculum: string = ""): Promise<string> {
+export async function askGemini(question: string, curriculum: string = "", subjectName: string = "", curriculumUrl?: string): Promise<string> {
   try {
-    // Correct: Initialize GoogleGenAI using the process.env.API_KEY directly as per guidelines.
-    const genAI = new GoogleGenAI(process.env.API_KEY || "");
+    const apiKey = process.env.API_KEY;
     
-    // استخدام موديل Gemini 1.5 Flash لسرعة الاستجابة وكفاءتها التعليمية
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      systemInstruction: curriculum
-        ? `أنت مساعد تعليمي خبير. المنهج الدراسي الحالي هو: ${curriculum}. أجب على أسئلة الطلاب بوضوح وبطريقة تعليمية مبسطة ومباشرة باللغة العربية.`
-        : "أنت مساعد تعليمي خبير. أجب على أسئلة الطلاب بوضوح وبطريقة تعليمية مبسطة باللغة العربية.",
+    if (!apiKey) {
+      throw new Error("API_KEY is missing from environment variables.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const systemInstruction = `
+      أنت "مساعد خطِّطها التعليمي الذكي"، معلم خبير متخصص في مادة: (${subjectName}).
+      مهمتك الأساسية: الإجابة على أسئلة الطلاب بناءً على المنهج الدراسي المتوفر (سواء كان نصاً أو ملفاً مرفقاً).
+      
+      --- المنهج الدراسي المكتوب للمادة ---
+      ${curriculum || "لم يتم تزويدك بمنهج مكتوب، يرجى مراجعة الملف المرفق إن وجد."}
+      ---
+      
+      قواعد التعامل مع الطالب:
+      1. الالتزام بالمنهج: ركز على المعلومات الواردة في المنهج المرفق أو النص المتوفر.
+      2. أسلوب الإجابة: استخدم لغة عربية فصحى بسيطة وودودة.
+      3. التنسيق التعليمي: استخدم النقاط والعناوين الفرعية لتسهيل الفهم.
+      4. الهوية: أنت معلم فخور بالانتماء لمنصة "خطِّطها".
+    `.trim();
+
+    // إعداد أجزاء المحتوى (Parts)
+    const contents: any[] = [{ text: question }];
+
+    // إذا كان هناك ملف PDF مرفوع بصيغة Base64
+    if (curriculumUrl && curriculumUrl.startsWith('data:application/pdf;base64,')) {
+      const base64Data = curriculumUrl.split(',')[1];
+      contents.unshift({
+        inlineData: {
+          data: base64Data,
+          mimeType: 'application/pdf'
+        }
+      });
+    }
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash-latest', // استخدام موديل يدعم الملفات
+      contents: [{ role: 'user', parts: contents }],
+      config: {
+        systemInstruction: systemInstruction,
+        temperature: 0.4,
+        topP: 0.8,
+        maxOutputTokens: 2048,
+      },
     });
 
-    const result = await model.generateContent(question);
-    const response = await result.response;
-    const resultText = response.text();
+    const resultText = response.text;
     
-    return resultText || "عذراً، لم أستطع توليد إجابة في الوقت الحالي.";
-  } catch (error: any) {
-    console.error("Gemini SDK Error:", error.message);
-    
-    if (error.message?.includes("404")) {
-      throw new Error("الموديل المختار غير متاح حالياً، يرجى مراجعة إعدادات الـ API.");
-    }
-    
-    if (error.message?.includes("API key not valid")) {
-      throw new Error("مفتاح الـ API غير صالح. يرجى التأكد من صلاحية المفتاح في البيئة.");
+    if (!resultText) {
+      return "عذراً، لم أستطع استنباط إجابة دقيقة من المنهج المتوفر حالياً. حاول صياغة سؤالك بشكل مختلف.";
     }
 
-    throw new Error("فشل الاتصال بالذكاء الاصطناعي. يرجى المحاولة بعد قليل.");
+    return resultText;
+  } catch (error: any) {
+    console.error("Gemini Connection Error:", error);
+    return "أواجه صعوبة في معالجة ملفات المنهج حالياً، يرجى التأكد من أن الملف بصيغة PDF صحيحة أو التواصل مع الدعم الفني.";
   }
 }
 
 /**
- * دالة لتلخيص محتوى درس تعليمي
+ * دالة مساعدة لتلخيص محتوى الدروس
  */
 export async function generateLessonSummary(lessonContent: string, subject: string): Promise<string> {
-  try {
-    const prompt = `قم بتلخيص محتوى درس "${subject}" التالي باللغة العربية في نقاط مركزة وسهلة الفهم للطلاب:\n\n${lessonContent}`;
-    return await askGemini(prompt);
-  } catch (error) {
-    console.warn("Summary Generation Failed:", error);
-    return "تعذر إنشاء ملخص آلي حالياً.";
-  }
-}
-
-/**
- * دالة لتوليد أسئلة اختبار بناءً على محتوى الدرس
- */
-export async function generateQuizQuestions(lessonContent: string, subject: string, count: number = 5): Promise<string[]> {
-  try {
-    const prompt = `بناءً على درس "${subject}"، أنشئ ${count} أسئلة خيار من متعدد. اجعل كل سؤال في سطر جديد متبوعاً بالخيارات. المحتوى:\n\n${lessonContent}`;
-    const response = await askGemini(prompt);
-    return response.split("\n").filter(line => line.trim().length > 10);
-  } catch (error) {
-    console.warn("Quiz Generation Failed:", error);
-    return [];
-  }
+  const prompt = `بصفتك معلم مادة ${subject}، قم بتلخيص هذا المحتوى التعليمي في نقاط ذهبية سهلة الحفظ للطلاب:\n\n${lessonContent}`;
+  return await askGemini(prompt, lessonContent, subject);
 }

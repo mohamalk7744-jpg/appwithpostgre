@@ -1,3 +1,4 @@
+
 import { getDb } from "../server/db";
 import { users } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
@@ -11,7 +12,8 @@ async function seed() {
   const db = await getDb();
   if (!db) {
     console.error("❌ Could not connect to database. Check DATABASE_URL.");
-    process.exit(1);
+    // Fix: Cast process to any to access exit
+    (process as any).exit(1);
   }
 
   try {
@@ -50,7 +52,8 @@ async function seed() {
     console.log("✅ Seeding completed successfully!");
   } catch (error) {
     console.error("❌ Seeding failed:", error);
-    process.exit(1);
+    // Fix: Cast process to any to access exit
+    (process as any).exit(1);
   }
 }
 
