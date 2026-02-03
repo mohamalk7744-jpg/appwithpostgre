@@ -92,8 +92,8 @@ export const appRouter = router({
     getDailyForLesson: protectedProcedure.input(z.object({ subjectId: z.number(), dayNumber: z.number() })).query(({ input }) => db.getDailyQuizByLesson(input.subjectId, input.dayNumber)),
     getById: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getFullQuiz(input.id)),
     getExamsWithStatus: protectedProcedure.input(z.object({ quizIds: z.array(z.number()) })).query(({ ctx, input }) => db.getStudentQuizAttempts(ctx.user.id, input.quizIds)),
-    getQuizSubmissions: protectedProcedure.input(z.object({ quizId: z.number() })).query(({ input }) => db.getSubmissionsByQuiz(input.id)),
-    getSubmissionDetails: protectedProcedure.input(z.object({ studentId: z.number(), quizId: z.number() })).query(({ input }) => db.getDetailedSubmission(input.studentId, input.id)),
+    getQuizSubmissions: protectedProcedure.input(z.object({ quizId: z.number() })).query(({ input }) => db.getSubmissionsByQuiz(input.quizId)),
+    getSubmissionDetails: protectedProcedure.input(z.object({ studentId: z.number(), quizId: z.number() })).query(({ input }) => db.getDetailedSubmission(input.studentId, input.quizId)),
     create: protectedProcedure
       .input(z.object({
         subjectId: z.number(),
@@ -154,7 +154,6 @@ export const appRouter = router({
   chat: router({
     ask: protectedProcedure.input(z.object({ subjectId: z.number(), question: z.string().min(1) })).mutation(async ({ ctx, input }) => {
       const subject = await db.getSubjectById(input.subjectId);
-      // الإصلاح: التحقق من وجود النص (curriculum) أو الملف (curriculumUrl)
       if (!subject || (!subject.curriculum && !subject.curriculumUrl)) {
         return { answer: "عذراً، لا يوجد منهج تعليمي متاح حالياً لهذه المادة ليتمكن البوت من مساعدتك. يرجى الطلب من الإدارة رفع المنهاج.", success: false };
       }
