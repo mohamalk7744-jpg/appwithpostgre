@@ -4,6 +4,7 @@ import "dotenv/config";
 
 /**
  * دالة لإرسال سؤال لموديل Gemini والحصول على إجابة تعليمية رصينة مرتبطة بالمنهاج
+ * تم الترقية لنسخة Pro لضمان قراءة ملفات الـ PDF بشكل صحيح
  */
 export async function askGemini(question: string, curriculum: string = "", subjectName: string = "", curriculumUrl?: string): Promise<string> {
   try {
@@ -16,55 +17,58 @@ export async function askGemini(question: string, curriculum: string = "", subje
     const ai = new GoogleGenAI({ apiKey });
     
     const systemInstruction = `
-      أنت "مساعد خطِّطها التعليمي الذكي"، معلم خبير متخصص في مادة: (${subjectName}).
-      مهمتك الأساسية: الإجابة على أسئلة الطلاب بناءً على المنهج الدراسي المتوفر (سواء كان نصاً أو ملفاً مرفقاً).
+      أنت "مساعد خطِّطها التعليمي الذكي"، خبير وأستاذ متخصص في مادة: (${subjectName}).
       
-      --- المنهج الدراسي المكتوب للمادة ---
-      ${curriculum || "لم يتم تزويدك بمنهج مكتوب، يرجى مراجعة الملف المرفق إن وجد."}
-      ---
+      مهمتك الأساسية هي تحليل المنهاج المرفق (سواء كان نصاً أو ملف PDF) والإجابة على أسئلة الطالب بدقة.
       
-      قواعد التعامل مع الطالب:
-      1. الالتزام بالمنهج: ركز على المعلومات الواردة في المنهج المرفق أو النص المتوفر.
-      2. أسلوب الإجابة: استخدم لغة عربية فصحى بسيطة وودودة.
-      3. التنسيق التعليمي: استخدم النقاط والعناوين الفرعية لتسهيل الفهم.
-      4. الهوية: أنت معلم فخور بالانتماء لمنصة "خطِّطها".
+      --- تعليمات صارمة ---
+      1. اعتمد كلياً على المعلومات الواردة في المنهج المرفق فقط.
+      2. إذا سألك الطالب عن شيء غير موجود في المنهج، أخبره بلباقة أن هذا الموضوع خارج نطاق المنهاج المقرر.
+      3. استخدم لغة عربية فصحى، بسيطة، ومشجعة.
+      4. قدم إجابات منظمة في نقاط إذا لزم الأمر لتسهيل الفهم.
+      
+      سياق المنهج النصي:
+      ${curriculum || "المحتوى الأساسي موجود في ملف الـ PDF المرفق."}
     `.trim();
 
-    // إعداد أجزاء المحتوى (Parts)
-    const contents: any[] = [{ text: question }];
+    const parts: any[] = [];
 
-    // إذا كان هناك ملف PDF مرفوع بصيغة Base64
-    if (curriculumUrl && curriculumUrl.startsWith('data:application/pdf;base64,')) {
-      const base64Data = curriculumUrl.split(',')[1];
-      contents.unshift({
-        inlineData: {
-          data: base64Data,
-          mimeType: 'application/pdf'
-        }
-      });
+    // التعامل مع ملف الـ PDF المرفق
+    if (curriculumUrl) {
+      // التحقق مما إذا كان الرابط عبارة عن Data URL (Base64)
+      if (curriculumUrl.startsWith('data:application/pdf;base64,')) {
+        const base64Data = curriculumUrl.split('base64,')[1];
+        parts.push({
+          inlineData: {
+            data: base64Data,
+            mimeType: 'application/pdf'
+          }
+        });
+      } else {
+        // إذا كان رابطاً عادياً (نص إرشادي للموديل)
+        parts.push({ text: `يرجى مراجعة محتوى المنهج من المصدر المتاح: ${curriculumUrl}` });
+      }
     }
 
+    // إضافة سؤال الطالب
+    parts.push({ text: question });
+
+    // استخدام موديل Pro للمهام المعقدة (تحليل ملفات PDF)
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash-latest', // استخدام موديل يدعم الملفات
-      contents: [{ role: 'user', parts: contents }],
+      model: 'gemini-3-pro-preview',
+      contents: { parts },
       config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.4,
+        systemInstruction,
+        temperature: 0.2, // درجة حرارة منخفضة جداً لضمان عدم التأليف (Hallucination)
         topP: 0.8,
         maxOutputTokens: 2048,
       },
     });
 
-    const resultText = response.text;
-    
-    if (!resultText) {
-      return "عذراً، لم أستطع استنباط إجابة دقيقة من المنهج المتوفر حالياً. حاول صياغة سؤالك بشكل مختلف.";
-    }
-
-    return resultText;
+    return response.text || "عذراً، لم أتمكن من استخراج إجابة من الملف المرفق. يرجى التأكد من أن ملف الـ PDF يحتوي على نصوص قابلة للقراءة وليس صوراً فقط.";
   } catch (error: any) {
-    console.error("Gemini Connection Error:", error);
-    return "أواجه صعوبة في معالجة ملفات المنهج حالياً، يرجى التأكد من أن الملف بصيغة PDF صحيحة أو التواصل مع الدعم الفني.";
+    console.error("Gemini Error:", error);
+    return "نعتذر منك، أواجه صعوبة تقنية في الوصول للمنهاج حالياً. يرجى المحاولة مرة أخرى أو إبلاغ الإدارة إذا استمرت المشكلة.";
   }
 }
 
@@ -72,6 +76,6 @@ export async function askGemini(question: string, curriculum: string = "", subje
  * دالة مساعدة لتلخيص محتوى الدروس
  */
 export async function generateLessonSummary(lessonContent: string, subject: string): Promise<string> {
-  const prompt = `بصفتك معلم مادة ${subject}، قم بتلخيص هذا المحتوى التعليمي في نقاط ذهبية سهلة الحفظ للطلاب:\n\n${lessonContent}`;
+  const prompt = `بصفتك معلم مادة ${subject}، قم بتلخيص هذا المحتوى في نقاط تعليمية سهلة الحفظ وواضحة:\n\n${lessonContent}`;
   return await askGemini(prompt, lessonContent, subject);
 }
