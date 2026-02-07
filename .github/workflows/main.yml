@@ -22,7 +22,7 @@ jobs:
           
           while [ $SECONDS -lt $end ]; do
             # إرسال الطلب
-            curl -s https://api.render.com/deploy/srv-d4fa3rf5r7bs73cj0t2g?key=x4cONL-LG9g > /dev/null
+            curl -s https://telegrambot-1-fjs6.onrender.com > /dev/null
             
             # طباعة رسالة في السجل للتأكد من العمل
             echo "Ping sent at $(date)"
