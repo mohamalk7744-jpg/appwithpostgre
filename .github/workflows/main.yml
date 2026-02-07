@@ -1,0 +1,32 @@
+
+name: Keep Render Alive
+
+on:
+  schedule:
+    - cron: "0 */6 * * *" # يتم جدولته للعمل كل 6 ساعات لبدء جلسة جديدة
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    # نضع وقتاً أقصى للجلسة (أقل بقليل من 6 ساعات) حتى تتوقف قبل أن تبدأ الجلسة التالية المجدولة
+    timeout-minutes: 355 
+    steps:
+      - name: Ping Render Loop
+        run: |
+          echo "Starting Ping Loop for 6 Hours..."
+          
+          # حساب وقت الانتهاء بالثواني (حوالي 5 ساعات و55 دقيقة)
+          # 21300 ثانية تكفي لتغطية الفترة حتى موعد الكرون التالي
+          end=$((SECONDS+21300))
+          
+          while [ $SECONDS -lt $end ]; do
+            # إرسال الطلب
+            curl -s https://api.render.com/deploy/srv-d4fa3rf5r7bs73cj0t2g?key=x4cONL-LG9g > /dev/null
+            
+            # طباعة رسالة في السجل للتأكد من العمل
+            echo "Ping sent at $(date)"
+            
+            # الانتظار لمدة 20 ثانية فقط (يمكنك تغييرها لأي رقم تريد)
+            sleep 40
+          done
